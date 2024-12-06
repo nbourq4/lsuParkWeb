@@ -1,0 +1,10 @@
+.admin-panel {
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.admin-form input {
+    margin-bottom: 10px;
+}

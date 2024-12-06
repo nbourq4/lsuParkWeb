@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007BFF;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        form div {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, select, button {
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+            box-sizing: border-box;
+        }
+
+        h3 {
+            margin-bottom: 5px;
+        }
+
+        .message {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="btn">Home</a>
+
+    <h1>Admin Panel</h1>
+
+    <% if (message && message.length > 0) { %>
+        <p class="message"><%= message %></p>
+    <% } %>
+
+    <% if (error && error.length > 0) { %>
+        <p class="error"><%= error %></p>
+    <% } %>
+
+    <h2>Add New Parking Lot</h2>
+    <form id="addLotForm" method="POST" action="/api/parking/add">
+        <div>
+            <input type="text" name="lotName" placeholder="Lot Name" required>
+        </div>
+        <div>
+            <input type="text" name="lotNumber" placeholder="Lot Number" required>
+        </div>
+        <div>
+            <input type="number" name="totalSpaces" placeholder="Total Spaces" required>
+        </div>
+        <div>Availability:</div>
+        <div>
+            <h3>Monday</h3>
+            <input type="number" name="availability.Monday.time_7am" placeholder="7 AM" min="0" value="0">
+            <input type="number" name="availability.Monday.time_11am" placeholder="11 AM" min="0" value="0">
+            <input type="number" name="availability.Monday.time_2pm" placeholder="2 PM" min="0" value="0">
+            <input type="number" name="availability.Monday.time_4pm" placeholder="4 PM" min="0" value="0">
+        </div>
+        <div>
+            <h3>Tuesday</h3>
+            <input type="number" name="availability.Tuesday.time_7am" placeholder="7 AM" min="0" value="0">
+            <input type="number" name="availability.Tuesday.time_11am" placeholder="11 AM" min="0" value="0">
+            <input type="number" name="availability.Tuesday.time_2pm" placeholder="2 PM" min="0" value="0">
+            <input type="number" name="availability.Tuesday.time_4pm" placeholder="4 PM" min="0" value="0">
+        </div>
+        <div>
+            <h3>Wednesday</h3>
+            <input type="number" name="availability.Wednesday.time_7am" placeholder="7 AM" min="0" value="0">
+            <input type="number" name="availability.Wednesday.time_11am" placeholder="11 AM" min="0" value="0">
+            <input type="number" name="availability.Wednesday.time_2pm" placeholder="2 PM" min="0" value="0">
+            <input type="number" name="availability.Wednesday.time_4pm" placeholder="4 PM" min="0" value="0">
+        </div>
+        <div>
+            <h3>Thursday</h3>
+            <input type="number" name="availability.Thursday.time_7am" placeholder="7 AM" min="0" value="0">
+            <input type="number" name="availability.Thursday.time_11am" placeholder="11 AM" min="0" value="0">
+            <input type="number" name="availability.Thursday.time_2pm" placeholder="2 PM" min="0" value="0">
+            <input type="number" name="availability.Thursday.time_4pm" placeholder="4 PM" min="0" value="0">
+        </div>
+        <div>
+            <h3>Friday</h3>
+            <input type="number" name="availability.Friday.time_7am" placeholder="7 AM" min="0" value="0">
+            <input type="number" name="availability.Friday.time_11am" placeholder="11 AM" min="0" value="0">
+            <input type="number" name="availability.Friday.time_2pm" placeholder="2 PM" min="0" value="0">
+            <input type="number" name="availability.Friday.time_4pm" placeholder="4 PM" min="0" value="0">
+        </div>
+        <button type="submit">Add Lot</button>
+    </form>
+
+    <h2>Delete Parking Lot</h2>
+    <form id="deleteLotForm" method="POST" action="/api/parking/delete">
+        <input type="text" name="lotId" placeholder="Lot ID to Delete" required>
+        <button type="submit">Delete Lot</button>
+    </form>
+
+    <h2>Take a Parking Spot</h2>
+    <form id="takeSpotForm" method="POST" action="/api/parking/take-spot" onsubmit="return confirmTakeSpot()">
+        <label for="takeLot">Select Lot:</label>
+        <select name="lotNumber" id="takeLot" required>
+            <% if (parkingLots && parkingLots.length > 0) { %>
+                <% parkingLots.forEach(lot => { %>
+                    <option value="<%= lot.lotNumber %>"><%= lot.lotName %> (Lot <%= lot.lotNumber %>)</option>
+                <% }); %>
+            <% } else { %>
+                <option disabled>No parking lots available</option>
+            <% } %>
+        </select>
+        
+        <label for="takeDay">Select Day:</label>
+        <select name="day" id="takeDay" required>
+            <option value="">--Select Day--</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+        </select>
+        
+        <label for="takeTime">Select Time:</label>
+        <select name="time" id="takeTime" required>
+            <option value="">--Select Time--</option>
+            <option value="time_7am">7 AM</option>
+            <option value="time_11am">11 AM</option>
+            <option value="time_2pm">2 PM</option>
+            <option value="time_4pm">4 PM</option>
+        </select>
+        
+        <button type="submit">Take Spot</button>
+    </form>
+
+    <h2>Free a Parking Spot</h2>
+    <form id="freeSpotForm" method="POST" action="/api/parking/free-spot" onsubmit="return confirmFreeSpot()">
+        <label for="freeLot">Select Lot:</label>
+        <select name="lotNumber" id="freeLot" required>
+            <% if (parkingLots && parkingLots.length > 0) { %>
+                <% parkingLots.forEach(lot => { %>
+                    <option value="<%= lot.lotNumber %>"><%= lot.lotName %> (Lot <%= lot.lotNumber %>)</option>
+                <% }); %>
+            <% } else { %>
+                <option disabled>No parking lots available</option>
+            <% } %>
+        </select>
+        
+        <label for="freeDay">Select Day:</label>
+        <select name="day" id="freeDay" required>
+            <option value="">--Select Day--</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+        </select>
+        
+        <label for="freeTime">Select Time:</label>
+        <select name="time" id="freeTime" required>
+            <option value="">--Select Time--</option>
+            <option value="time_7am">7 AM</option>
+            <option value="time_11am">11 AM</option>
+            <option value="time_2pm">2 PM</option>
+            <option value="time_4pm">4 PM</option>
+        </select>
+        
+        <button type="submit">Free Spot</button>
+    </form>
+
+    <script>
+        function confirmTakeSpot() {
+            return confirm('Are you sure you want to take this parking spot?');
+        }
+
+        function confirmFreeSpot() {
+            return confirm('Are you sure you want to free this parking spot?');
+        }
+
+        // Client-side validation (Optional)
+        document.getElementById('takeSpotForm').addEventListener('submit', function(e) {
+            const lot = document.getElementById('takeLot').value;
+            const day = document.getElementById('takeDay').value;
+            const time = document.getElementById('takeTime').value;
+
+            if (!lot || !day || !time) {
+                alert('Please select a lot, day, and time.');
+                e.preventDefault();
+            }
+        });
+
+        document.getElementById('freeSpotForm').addEventListener('submit', function(e) {
+            const lot = document.getElementById('freeLot').value;
+            const day = document.getElementById('freeDay').value;
+            const time = document.getElementById('freeTime').value;
+
+            if (!lot || !day || !time) {
+                alert('Please select a lot, day, and time.');
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

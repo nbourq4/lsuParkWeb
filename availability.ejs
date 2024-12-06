@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Availability</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/availability.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #343a40;
+            color: #fff;
+        }
+        
+        tbody tr:hover {
+            background-color: #e9ecef;
+        }
+        .btn-home {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="btn btn-primary btn-home">Home</a>
+        
+        <h1 class="mb-4">Parking Lot Availability</h1>
+        
+        <form id="availabilityForm" class="form-inline">
+            <label class="sr-only" for="daySelect">Select a Day</label>
+            <select name="day" id="daySelect" class="form-control mb-2 mr-sm-2" onchange="fetchAvailability(this.value)">
+                <option value="">Select a Day</option>
+                <option value="monday">Monday</option>
+                <option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option>
+                <option value="thursday">Thursday</option>
+                <option value="friday">Friday</option>
+            </select>
+        </form>
+        
+        <div id="availabilityResults" class="mt-4">
+            <p>Please select a day to view availability.</p>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    
+    function fetchAvailability(day) {
+        const resultsDiv = document.getElementById('availabilityResults');
+        
+        if (!day) {
+            resultsDiv.innerHTML = '<p>Please select a day to view availability.</p>';
+            return;
+        }
+        
+        resultsDiv.innerHTML = '<p>Loading availability...</p>';
+        
+        fetch(`/api/availability/${day}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.length) {
+                    resultsDiv.innerHTML = '<p>No data available for this day.</p>';
+                    return;
+                }
+                
+                // Filter out parking lots where all time slots are unavailable
+                const filteredData = data.filter(lot => {
+                    const { time_7am, time_11am, time_2pm, time_4pm } = lot.availability || {};
+                    return (time_7am > 0 || time_11am > 0 || time_2pm > 0 || time_4pm > 0);
+                });
+                
+                if (!filteredData.length) {
+                    resultsDiv.innerHTML = '<p>No available parking spots for the selected day.</p>';
+                    return;
+                }
+                
+                const tableHeaders = `
+                    <thead>
+                        <tr>
+                            <th>Parking Lot Name</th>
+                            <th>Spots Available @ 7 AM</th>
+                            <th>Spots Available @ 11 AM</th>
+                            <th>Spots Available @ 2 PM</th>
+                            <th>Spots Available @ 4 PM</th>
+                        </tr>
+                    </thead>
+                `;
+                
+                const tableRows = filteredData.map(lot => {
+                    const { time_7am, time_11am, time_2pm, time_4pm } = lot.availability || {};
+                    return `
+                        <tr>
+                            <td>${lot.name}</td>
+                            <td>${time_7am > 0 ? time_7am : 'Not Available'}</td>
+                            <td>${time_11am > 0 ? time_11am : 'Not Available'}</td>
+                            <td>${time_2pm > 0 ? time_2pm : 'Not Available'}</td>
+                            <td>${time_4pm > 0 ? time_4pm : 'Not Available'}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                const table = `
+                    <table class="table table-bordered table-hover">
+                        ${tableHeaders}
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                `;
+                
+                resultsDiv.innerHTML = table;
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                resultsDiv.innerHTML = '<p>Error fetching data. Please try again later.</p>';
+            });
+    }
+    </script>
+</body>
+</html>
